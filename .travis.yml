@@ -27,6 +27,9 @@ env:
     - LMDB_REVISION=0.9.16
     - LMDB_BUILD_DIR=${TRAVIS_BUILD_DIR}/lmdb-LMDB_${LMDB_REVISION}
     - LMDB_HOME=${TRAVIS_BUILD_DIR}/lmdb
+  matrix:
+    - CPP11_MAPPING=yes
+    - CPP11_MAPPING=
 
 python:
 - "2.7"
