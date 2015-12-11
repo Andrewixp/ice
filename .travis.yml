@@ -28,8 +28,8 @@ env:
     - LMDB_BUILD_DIR=${TRAVIS_BUILD_DIR}/lmdb-LMDB_${LMDB_REVISION}
     - LMDB_HOME=${TRAVIS_BUILD_DIR}/lmdb
   matrix:
-    - CPP11_MAPPING=yes
-    - CPP11_MAPPING=
+    - WORK_DIR=${TRAVIS_BUILD_DIR}/cpp CPP11_MAPPING=yes
+    - WORK_DIR=${TRAVIS_BUILD_DIR}
 
 python:
 - "2.7"
@@ -48,10 +48,10 @@ install:
 - CPPFLAGS=-fPIC make -C ${LMDB_BUILD_DIR}/libraries/liblmdb install prefix=${LMDB_HOME}
 - rm -f ${LMDB_HOME}/lib/liblmdb.so
 - pip install passlib
-- make -j3
+- make -C ${WORK_DIR} -j3
 
 script:
-- python allTests.py --debug --env --protocol=ssl
+- python ${WORK_DIR}/allTests.py --debug --env --protocol=ssl
 
 notifications:
   email: travis-ci@zeroc.com
