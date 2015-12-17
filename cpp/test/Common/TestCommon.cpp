@@ -84,7 +84,7 @@ RemoteConfig::RemoteConfig(const std::string& name, int argc, char** argv, const
         }
     }
 
-    Test::Common::ServerPrx server;
+    Test::Common::ServerPrxPtr server;
 
     if(!controllerHost.empty())
     {
