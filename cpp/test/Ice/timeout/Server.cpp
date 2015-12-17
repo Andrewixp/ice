@@ -18,7 +18,7 @@ using namespace std;
 int
 run(int, char**, const Ice::CommunicatorPtr& communicator)
 {
-    communicator->getProperties()->setProperty("TestAdapter.Endpoints", "default -p 12010:udp");
+    communicator->getProperties()->setProperty("TestAdapter.Endpoints", getTestEndpoint(communicator, 0) + ":udp");
     Ice::ObjectAdapterPtr adapter = communicator->createObjectAdapter("TestAdapter");
     Ice::ObjectPtr object = ICE_MAKE_SHARED(TimeoutI);
     adapter->add(object, communicator->stringToIdentity("timeout"));
@@ -28,15 +28,13 @@ run(int, char**, const Ice::CommunicatorPtr& communicator)
     return EXIT_SUCCESS;
 }
 
+
 int
 main(int argc, char* argv[])
 {
 #ifdef ICE_STATIC_LIBS
     Ice::registerIceSSL();
 #endif
-
-    int status;
-    Ice::CommunicatorPtr communicator;
 
     try
     {
@@ -62,27 +60,12 @@ main(int argc, char* argv[])
         //
         initData.properties->setProperty("Ice.TCP.RcvSize", "50000");
 
-        communicator = ICE_COMMUNICATOR_HOLDER_RELEASE(Ice::initialize(argc, argv, initData));
-        status = run(argc, argv, communicator);
+        Ice::CommunicatorHolder ich = Ice::initialize(argc, argv, initData);
+        return run(argc, argv, ich.communicator());
     }
     catch(const Ice::Exception& ex)
     {
         cerr << ex << endl;
-        status = EXIT_FAILURE;
+        return  EXIT_FAILURE;
     }
-
-    if(communicator)
-    {
-        try
-        {
-            communicator->destroy();
-        }
-        catch(const Ice::Exception& ex)
-        {
-            cerr << ex << endl;
-            status = EXIT_FAILURE;
-        }
-    }
-
-    return status;
 }

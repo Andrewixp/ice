@@ -69,8 +69,11 @@ class ICE_API ThreadHookPlugin : public Ice::Plugin
 {
 public:
 
+#ifdef ICE_CPP11_MAPPING
+    ThreadHookPlugin(const CommunicatorPtr& communicator, std::function<void()>, std::function<void()>);
+#else
     ThreadHookPlugin(const CommunicatorPtr& communicator, const ThreadNotificationPtr&);
-
+#endif
     virtual void initialize();
 
     virtual void destroy();
@@ -84,44 +87,27 @@ struct InitializationData
     PropertiesPtr properties;
     LoggerPtr logger;
     Instrumentation::CommunicatorObserverPtr observer;
+#ifdef ICE_CPP11_MAPPING
+    std::function<void()> threadStart;
+    std::function<void()> threadStop;
+    std::function<void (std::function<void ()>, const std::shared_ptr<Ice::Connection>&)> dispatcher;
+    std::function<std::string (int)> compactIdResolver;
+    std::function<void(const Ice::BatchRequest&, int, int)> batchRequestInterceptor;
+#else
     ThreadNotificationPtr threadHook;
     DispatcherPtr dispatcher;
     CompactIdResolverPtr compactIdResolver;
     BatchRequestInterceptorPtr batchRequestInterceptor;
-};
-
-#ifdef ICE_CPP11_MAPPING
-
-class ICE_API CommunicatorHolder
-{
-public:
-    
-    CommunicatorHolder(std::shared_ptr<Ice::Communicator>&&);
-    
-    CommunicatorHolder(CommunicatorHolder&&) = default;
-    CommunicatorHolder(CommunicatorHolder&) = delete;
-    CommunicatorHolder& operator=(CommunicatorHolder&&) = default;
-
-    ~CommunicatorHolder();
-    
-    const std::shared_ptr<Ice::Communicator>& communicator() const;
-    std::shared_ptr<Ice::Communicator> release();
-    const std::shared_ptr<Ice::Communicator>& operator->() const;
-
-private:
-    
-    std::shared_ptr<Ice::Communicator> _communicator;
-};
-
 #endif
+};
 
-ICE_API ICE_COMMUNICATOR_HOLDER initialize(int&, char*[], const InitializationData& = InitializationData(),
-                                           Int = ICE_INT_VERSION);
+ICE_API CommunicatorPtr initialize(int&, char*[], const InitializationData& = InitializationData(),
+                                   Int = ICE_INT_VERSION);
 
-ICE_API ICE_COMMUNICATOR_HOLDER initialize(Ice::StringSeq&, const InitializationData& = InitializationData(),
-                                           Int = ICE_INT_VERSION);
+ICE_API CommunicatorPtr initialize(Ice::StringSeq&, const InitializationData& = InitializationData(),
+                                   Int = ICE_INT_VERSION);
 
-ICE_API ICE_COMMUNICATOR_HOLDER initialize(const InitializationData& = InitializationData(),
+ICE_API CommunicatorPtr initialize(const InitializationData& = InitializationData(),
                                            Int = ICE_INT_VERSION);
 
 ICE_API InputStreamPtr createInputStream(const CommunicatorPtr&, const ::std::vector< Byte >&);
@@ -148,6 +134,42 @@ ICE_API void setProcessLogger(const LoggerPtr&);
 
 typedef Ice::Plugin* (*PLUGIN_FACTORY)(const ::Ice::CommunicatorPtr&, const std::string&, const ::Ice::StringSeq&);
 ICE_API void registerPluginFactory(const std::string&, PLUGIN_FACTORY, bool);
+
+
+//
+// RAII helper class
+//
+class ICE_API CommunicatorHolder
+{
+public:
+
+#ifdef ICE_CPP11_MAPPING
+    CommunicatorHolder(std::shared_ptr<Communicator>);
+
+    CommunicatorHolder(const CommunicatorHolder&) = delete;
+
+    CommunicatorHolder(CommunicatorHolder&&) = default;
+    CommunicatorHolder& operator=(CommunicatorHolder&&) = default;
+
+#else
+    CommunicatorHolder(const CommunicatorPtr&);
+    
+    // Required for successful copy-initialization, but not
+    // defined as it should always be elided by compiler
+    CommunicatorHolder(const CommunicatorHolder&);
+
+#endif
+
+    ~CommunicatorHolder();
+
+    const CommunicatorPtr& communicator() const;
+    CommunicatorPtr release();
+    const CommunicatorPtr& operator->() const;
+
+private:
+
+    CommunicatorPtr  _communicator;
+};
 
 }
 

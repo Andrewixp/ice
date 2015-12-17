@@ -21,17 +21,29 @@ SUBDIRS		= proxy \
                   facets \
                   objects \
                   faultTolerance \
+                  location \
                   adapterDeactivation \
+                  slicing \
                   hash \
-                  admin \
-                  enums \
+                  checksum \
+                  dispatcher \
+                  hold \
+                  binding \
+                  retry \
                   timeout \
+                  acm \
+                  servantLocator \
+                  interceptor \
                   udp \
+                  defaultServant \
                   defaultValue \
                   properties \
                   plugin \
+                  admin \
+                  enums \
                   logger \
-                  networkProxy
+                  networkProxy \
+                  services
 else
 SUBDIRS		= proxy \
                   operations \

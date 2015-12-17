@@ -108,7 +108,8 @@ batchOneways(const Test::MyClassPrxPtr& p)
         IceUtil::ThreadControl::sleep(IceUtil::Time::milliSeconds(10));
     }
 
-    if(batch->ice_getConnection())
+    if(batch->ice_getConnection() &&
+       p->ice_getCommunicator()->getProperties()->getProperty("Ice.Default.Protocol") != "bt")
     {
         Test::MyClassPrxPtr batch1 = ICE_UNCHECKED_CAST(Test::MyClassPrx, p->ice_batchOneway());
         Test::MyClassPrxPtr batch2 = ICE_UNCHECKED_CAST(Test::MyClassPrx, p->ice_batchOneway());
@@ -141,13 +142,20 @@ batchOneways(const Test::MyClassPrxPtr& p)
     batch->ice_flushBatchRequests();
     batch->ice_ping();
 
-    if(batch->ice_getConnection())
+    if(batch->ice_getConnection() &&
+       p->ice_getCommunicator()->getProperties()->getProperty("Ice.Default.Protocol") != "bt")
     {
         Ice::InitializationData initData;
         initData.properties = p->ice_getCommunicator()->getProperties()->clone();
         BatchRequestInterceptorIPtr interceptor = ICE_MAKE_SHARED(BatchRequestInterceptorI);
 
-#ifdef ICE_CPP11_COMPILER
+#if defined(ICE_CPP11_MAPPING)
+        initData.batchRequestInterceptor =
+            [=](const Ice::BatchRequest& request, int count, int size)
+            {
+                interceptor->enqueue(request, count, size);
+            };
+#elif defined(ICE_CPP11_COMPILER)
         // Ensure lambda factory method works.
         initData.batchRequestInterceptor = Ice::newBatchRequestInterceptor(
             [=](const Ice::BatchRequest& request, int count, int size)
@@ -157,7 +165,7 @@ batchOneways(const Test::MyClassPrxPtr& p)
 #else
         initData.batchRequestInterceptor = interceptor;
 #endif
-        Ice::CommunicatorPtr ic = ICE_COMMUNICATOR_HOLDER_RELEASE(Ice::initialize(initData));
+        Ice::CommunicatorPtr ic = Ice::initialize(initData);
 
         Test::MyClassPrxPtr batch =
             ICE_UNCHECKED_CAST(Test::MyClassPrx, ic->stringToProxy(p->ice_toString()))->ice_batchOneway();

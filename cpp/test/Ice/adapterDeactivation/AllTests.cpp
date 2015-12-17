@@ -19,7 +19,7 @@ TestIntfPrxPtr
 allTests(const CommunicatorPtr& communicator)
 {
     cout << "testing stringToProxy... " << flush;
-    ObjectPrxPtr base = communicator->stringToProxy("test:default -p 12010");
+    ObjectPrxPtr base = communicator->stringToProxy("test:" + getTestEndpoint(communicator, 0));
     test(base);
     cout << "ok" << endl;
 
@@ -67,13 +67,12 @@ allTests(const CommunicatorPtr& communicator)
         {
             Ice::InitializationData initData;
             initData.properties = communicator->getProperties()->clone();
-            Ice::CommunicatorPtr comm = ICE_COMMUNICATOR_HOLDER_RELEASE(Ice::initialize(initData));
+            Ice::CommunicatorHolder comm = Ice::initialize(initData);
 #ifdef ICE_CPP11_MAPPING
-            comm->stringToProxy("test:default -p 12010")->ice_ping_async();
+            comm->stringToProxy("test:" + getTestEndpoint(communicator, 0))->ice_ping_async();
 #else
-            comm->stringToProxy("test:default -p 12010")->begin_ice_ping();
+            comm->stringToProxy("test:" + getTestEndpoint(communicator, 0))->begin_ice_ping();
 #endif
-            comm->destroy();
         }
         cout << "ok" << endl;
     }

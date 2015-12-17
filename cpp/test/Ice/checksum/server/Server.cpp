@@ -18,10 +18,9 @@ DEFINE_TEST("server")
 int
 run(int, char**, const Ice::CommunicatorPtr& communicator)
 {
-    communicator->getProperties()->setProperty("TestAdapter.Endpoints", "default -p 12010 -t 10000");
+    communicator->getProperties()->setProperty("TestAdapter.Endpoints", getTestEndpoint(communicator, 0) + " -t 10000");
     Ice::ObjectAdapterPtr adapter = communicator->createObjectAdapter("TestAdapter");
-    Ice::ObjectPtr object = new ChecksumI();
-    adapter->add(object, communicator->stringToIdentity("test"));
+    adapter->add(ICE_MAKE_SHARED(ChecksumI), communicator->stringToIdentity("test"));
     adapter->activate();
     TEST_READY
     communicator->waitForShutdown();
@@ -34,32 +33,14 @@ main(int argc, char* argv[])
 #ifdef ICE_STATIC_LIBS
     Ice::registerIceSSL();
 #endif
-    int status;
-    Ice::CommunicatorPtr communicator;
-
     try
     {
-        communicator = Ice::initialize(argc, argv);
-        status = run(argc, argv, communicator);
+        Ice::CommunicatorHolder ich = Ice::initialize(argc, argv);
+        return run(argc, argv, ich.communicator());
     }
     catch(const Ice::Exception& ex)
     {
         cerr << ex << endl;
-        status = EXIT_FAILURE;
+        return EXIT_FAILURE;
     }
-
-    if(communicator)
-    {
-        try
-        {
-            communicator->destroy();
-        }
-        catch(const Ice::Exception& ex)
-        {
-            cerr << ex << endl;
-            status = EXIT_FAILURE;
-        }
-    }
-
-    return status;
 }

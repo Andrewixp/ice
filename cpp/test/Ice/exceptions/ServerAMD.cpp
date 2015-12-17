@@ -18,6 +18,11 @@ using namespace std;
 int
 run(int, char**, const Ice::CommunicatorPtr& communicator)
 {
+    communicator->getProperties()->setProperty("TestAdapter.Endpoints", getTestEndpoint(communicator, 0) + ":udp");
+    communicator->getProperties()->setProperty("TestAdapter2.Endpoints", getTestEndpoint(communicator, 1));
+    communicator->getProperties()->setProperty("TestAdapter2.MessageSizeMax", "0");
+    communicator->getProperties()->setProperty("TestAdapter3.Endpoints", getTestEndpoint(communicator, 2));
+    communicator->getProperties()->setProperty("TestAdapter3.MessageSizeMax", "1");
     Ice::ObjectAdapterPtr adapter = communicator->createObjectAdapter("TestAdapter");
     Ice::ObjectAdapterPtr adapter2 = communicator->createObjectAdapter("TestAdapter2");
     Ice::ObjectAdapterPtr adapter3 = communicator->createObjectAdapter("TestAdapter3");
@@ -39,8 +44,6 @@ main(int argc, char* argv[])
 #ifdef ICE_STATIC_LIBS
     Ice::registerIceSSL();
 #endif
-    int status;
-    Ice::CommunicatorPtr communicator;
 
     try
     {
@@ -48,33 +51,14 @@ main(int argc, char* argv[])
         initData.properties = Ice::createProperties(argc, argv);
         initData.properties->setProperty("Ice.Warn.Dispatch", "0");
         initData.properties->setProperty("Ice.Warn.Connections", "0");
-        initData.properties->setProperty("TestAdapter.Endpoints", "default -p 12010:udp");
         initData.properties->setProperty("Ice.MessageSizeMax", "10"); // 10KB max
-        initData.properties->setProperty("TestAdapter2.Endpoints", "default -p 12011");
-        initData.properties->setProperty("TestAdapter2.MessageSizeMax", "0");
-        initData.properties->setProperty("TestAdapter3.Endpoints", "default -p 12012");
-        initData.properties->setProperty("TestAdapter3.MessageSizeMax", "1");
-        communicator = ICE_COMMUNICATOR_HOLDER_RELEASE(Ice::initialize(argc, argv, initData));
-        status = run(argc, argv, communicator);
+
+        Ice::CommunicatorHolder ich = Ice::initialize(argc, argv, initData);
+        return run(argc, argv, ich.communicator());
     }
     catch(const Ice::Exception& ex)
     {
         cerr << ex << endl;
-        status = EXIT_FAILURE;
+        return  EXIT_FAILURE;
     }
-
-    if(communicator)
-    {
-        try
-        {
-            communicator->destroy();
-        }
-        catch(const Ice::Exception& ex)
-        {
-            cerr << ex << endl;
-            status = EXIT_FAILURE;
-        }
-    }
-
-    return status;
 }
